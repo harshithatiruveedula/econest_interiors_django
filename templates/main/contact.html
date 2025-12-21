@@ -1,0 +1,250 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block title %}EcoNest Interiors • Book a Consultation{% endblock %}
+{% block body_class %}consultation-page{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="page-hero">
+  <div class="container grid hero-grid">
+    <div>
+      <h1>Book a Consultation</h1>
+      <p>Let’s bring your eco-friendly dream home to your life.</p>
+    </div>
+    <div class="hero-media">
+      <img src="{% static 'website/images/img35.jpg' %}" alt="Consultation hero" />
+    </div>
+  </div>
+</section>
+
+<!-- FORM -->
+<section class="section">
+  <div class="container">
+    <h2 class="center">Book a Consultation</h2>
+    <p class="center muted">Let’s bring your eco-friendly dream home to your life.</p>
+
+    <form class="grid form" id="consultForm" method="post" action="{% url 'contact' %}" novalidate>
+      {% csrf_token %}
+
+      <div class="form-field">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" required />
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required />
+      </div>
+
+      <div class="form-field">
+        <label for="phone">Contact</label>
+        <input id="phone" name="phone" type="tel" required />
+      </div>
+
+      <div class="form-field">
+        <label for="appointment_date">Preferred Date</label>
+        <input id="appointment_date" name="appointment_date" type="date" required />
+      </div>
+
+      <div class="form-field full">
+        <label for="service">Preferred Service</label>
+        <select id="service" name="service" required>
+          <option value="">Preferred Service</option>
+          <option>Interior design consultation</option>
+          <option>Custom eco-friendly furniture</option>
+          <option>Renovation with sustainable materials</option>
+          <option>Green spaces and indoor plants</option>
+        </select>
+      </div>
+
+      <div class="form-actions full center">
+        <button class="button primary" type="submit">
+          Book a Consultation
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section class="section alt">
+  <div class="container why">
+    <h2 class="center">Why Book With Us</h2>
+    <div class="grid features-2">
+      <div class="feature row">
+        <img src="{% static 'website/images/img26.jpg' %}" />
+        <p>Sustainable design experts</p>
+      </div>
+      <div class="feature row">
+        <img src="{% static 'website/images/img27.jpg' %}" />
+        <p>Professional guidance</p>
+      </div>
+      <div class="feature row">
+        <img src="{% static 'website/images/img28.jpg' %}" />
+        <p>Hassle-free virtual or in-person meetings</p>
+      </div>
+      <div class="feature row">
+        <img src="{% static 'website/images/img29.jpg' %}" />
+        <p>Flexible scheduling</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT INFO -->
+<section class="section contact-cards">
+  <div class="container grid two">
+    <div>
+      <h3 class="contact-heading">
+        <img class="inline-icon" src="{% static 'website/images/img30.jpg' %}" />
+        Contact
+      </h3>
+      <p><a href="tel:+916301739482">+91 6301739482</a></p>
+    </div>
+
+    <div>
+      <p>
+        <img class="inline-icon" src="{% static 'website/images/img31.jpg' %}" />
+        <a href="mailto:harshithatiruveedula@gmail.com">
+          harshithatiruveedula@gmail.com
+        </a>
+      </p>
+      <p>
+        <img class="inline-icon" src="{% static 'website/images/img32.jpg' %}" />
+        Krishna Nagar, Kurnool.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-bar">
+  <div class="container center">
+    <p>"Transform your home with EcoNest Interiors – Book your free consultation today!"</p>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    // Get CSRF token helper function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Wait for DOM to be fully loaded
+    function initForm() {
+        const form = document.getElementById('consultForm');
+        
+        if (!form) {
+            console.error('Form with id "consultForm" not found');
+            return;
+        }
+        
+        // Clone the form to remove all existing event listeners
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        const cleanForm = document.getElementById('consultForm');
+        
+        // Get CSRF token from cookie or hidden input
+        const csrftoken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        
+        if (!csrftoken) {
+            console.warn('CSRF token not found - form may not work correctly');
+        }
+        
+        // Attach our event listener
+        cleanForm.addEventListener('submit', async function(e) {
+            // CRITICAL: Prevent default form submission
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            console.log('Django form submission intercepted');
+            
+            const formData = new FormData(cleanForm);
+            const submitButton = cleanForm.querySelector('button[type="submit"]');
+            const originalText = submitButton ? submitButton.textContent : 'Book a Consultation';
+            
+            // Disable button during submission
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Booking...';
+            }
+            
+            try {
+                console.log('Sending AJAX request to Django...');
+                
+                const response = await fetch('{% url "contact" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken || ''
+                    },
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+                
+                console.log('Response received:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                
+                const result = await response.json();
+                console.log('Result:', result);
+                
+                if (result.success) {
+                    // Show success popup
+                    alert(result.message);
+                    // Reset form
+                    cleanForm.reset();
+                } else {
+                    alert('Error: ' + (result.message || 'Unknown error occurred'));
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('Error: Unable to submit consultation. Please check the console for details and try again.');
+            } finally {
+                // Re-enable button
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
+            }
+            
+            return false; // Additional safeguard
+        });
+        
+        console.log('Django form event listener attached successfully');
+    }
+    
+    // Run when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initForm);
+    } else {
+        // DOM is already ready
+        initForm();
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<section class="section">
+  <div class="container">
+
+    <h2>{{ post.title }}</h2>
+    <p><i>By {{ post.author }} | {{ post.created_at }}</i></p>
+
+    {% if post.image %}
+    <img src="{{ post.image.url }}" alt="{{ post.title }}" style="width:100%;max-width:600px;">
+    {% endif %}
+
+    <p style="margin-top:20px;">{{ post.content }}</p>
+
+  </div>
+</section>
+
+{% endblock %}
