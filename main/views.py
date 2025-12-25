@@ -215,3 +215,16 @@ Could you please rephrase your question? Or feel free to ask about:
 - "Design tips for my home"
 
 I'm here to assist you! 😊"""
+
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+
+def create_admin(request):
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser(
+            username='admin',
+            email='admin@example.com',
+            password='Admin@123'
+        )
+        return HttpResponse("Admin created")
+    return HttpResponse("Admin already exists")
