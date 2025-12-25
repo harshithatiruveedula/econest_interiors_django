@@ -72,6 +72,18 @@ def blog_detail(request, id):
     return render(request, 'main/blog_detail.html', {'post': post})
 from .models import Consultation, Service, GalleryImage, BlogPost
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Consultation
+
+@login_required(login_url='/admin/login/')
+def dashboard(request):
+    consultations = Consultation.objects.all().order_by('-created_at')
+    return render(request, 'main/dashboard.html', {
+        'consultations': consultations
+    })
+
+
 @staff_member_required
 def dashboard(request):
     total_bookings = Consultation.objects.count()
