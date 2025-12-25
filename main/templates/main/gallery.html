@@ -1,0 +1,22 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <h2 class="text-center">Our Gallery</h2>
+
+    <div class="gallery-grid">
+
+      {% for photo in photos %}
+      <div class="gallery-card">
+        <img src="{{ photo.image.url }}" alt="{{ photo.title }}">
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

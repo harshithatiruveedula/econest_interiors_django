@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}EcoNest Interiors{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{% url 'home' %}">
+        <img class="brand-logo" src="{% static 'website/images/img34.jpg' %}" alt="EcoNest logo"/>
+        EcoNest Interiors
+      </a>
+
+      <button class="nav-toggle">☰</button>
+
+      <nav class="site-nav" id="siteNav">
+        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+   href="{% url 'home' %}">Home</a>
+
+<a class="nav-link {% if request.resolver_match.url_name == 'services' %}active{% endif %}" 
+   href="{% url 'services' %}">Services</a>
+
+<a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" 
+   href="{% url 'about' %}">About</a>
+
+<a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
+   href="{% url 'contact' %}">Book Consultation</a>
+
+        <!-- ADMIN DASHBOARD LINK -->
+        {% if user.is_staff %}
+          <a class="nav-link" href="/dashboard/">Dashboard</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <!-- PAGE CONTENT -->
+  <main>
+      {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <h4>EcoNest Interiors</h4>
+      </div>
+      <div><h5><a href="{% url 'home' %}">Home</a></h5></div>
+      <div><h5><a href="{% url 'services' %}">Services</a></h5></div>
+      <div><h5><a href="{% url 'about' %}">About</a></h5></div>
+
+      <div>
+        <h5>Contact</h5>
+        <ul>
+          <li>Email: <a href="mailto:harshithatiruveedula@gmail.com">harshithatiruveedula@gmail.com</a></li>
+          <li>Phone: <a href="tel:+916301739482">+91 6301739482</a></li>
+          <li>Address: Krishna Nagar, Kurnool.</li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'website/js/main.js' %}"></script>
+  <script src="{% static 'js/chat.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

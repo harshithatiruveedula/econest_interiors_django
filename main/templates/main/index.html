@@ -1,0 +1,78 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block title %}EcoNest Interiors • Home{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="container grid hero-grid">
+    <div class="hero-copy">
+      <h1>Design a<br/>Greener Home</h1>
+      <p>Eco-friendly interior design and sustainable living solutions</p>
+      <a class="button primary" href="{% url 'contact' %}">Book a Consultation</a>
+    </div>
+    <div class="hero-media">
+      <img src="{% static 'website/images/img1.jpg' %}" alt="Hero visual" />
+    </div>
+  </div>
+</section>
+
+<section class="services-preview section">
+  <div class="container">
+    <h2 class="center">Our Services</h2>
+    <div class="grid cards-3">
+      <article class="card">
+        <img src="{% static 'website/images/img2.jpg' %}" alt="Interior design consultation" />
+        <h3>Interior design consultation</h3>
+        <p>Personalised sessions to align your home with sustainable living.</p>
+      </article>
+      <article class="card">
+        <img src="{% static 'website/images/img3.jpg' %}" alt="Custom eco-friendly furniture" />
+        <h3>Custom eco-friendly furniture</h3>
+        <p>Handcrafted pieces using sustainable materials and finishes.</p>
+      </article>
+      <article class="card">
+        <img src="{% static 'website/images/img4.jpg' %}" alt="Renovation with sustainable materials" />
+        <h3>Renovation with sustainable materials</h3>
+        <p>Upgrade with eco-friendly flooring, paints, and fixtures.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="featured section alt">
+  <div class="container">
+    <h2 class="center">Featured Projects</h2>
+    <div class="grid cards-3">
+      <article class="card simple">
+        <img src="{% static 'website/images/img5.jpg' %}" alt="Kitchen" />
+        <h3>Kitchen</h3>
+      </article>
+      <article class="card simple">
+        <img src="{% static 'website/images/img6.jpg' %}" alt="Living Room" />
+        <h3>Living Room</h3>
+      </article>
+      <article class="card simple">
+        <img src="{% static 'website/images/img7.jpg' %}" alt="Office Room" />
+        <h3>Office Room</h3>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="quote section">
+  <div class="container center">
+    <p class="italic">“Nature is our dream house.”</p>
+    <p class="muted">— T. Harshitha</p>
+  </div>
+</section>
+
+<section class="cta-band section">
+  <div class="container center">
+    <h2>Book a Consultation</h2>
+    <a class="button primary" href="{% url 'contact' %}">Book a Consultation</a>
+  </div>
+</section>
+
+{% endblock %}

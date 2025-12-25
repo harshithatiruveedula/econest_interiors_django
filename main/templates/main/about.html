@@ -1,0 +1,78 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block body_class %}about-page{% endblock %}
+{% block title %}EcoNest Interiors • About{% endblock %}
+
+{% block content %}
+
+<main>
+    <section class="page-hero">
+      <div class="container grid hero-grid">
+        <div>
+          <h1>About EcoNest Interiors</h1>
+          <p>Blending design and sustainability for modern living.</p>
+        </div>
+        <div class="hero-media">
+          <img src="{% static 'website/images/img33.jpg' %}" alt="About page hero" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container grid two">
+        <div>
+          <h2>Our Story</h2>
+          <p>Founded with a mission to bring sustainable design into everyday homes, EcoNest Interiors combines aesthetics with eco-conscious solutions.</p>
+        </div>
+        <div>
+          <img src="{% static 'website/images/img18.jpg' %}" alt="Our story" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container center">
+        <h2>Our Mission & Vision</h2>
+        <div class="grid two mission">
+          <p>To create sustainable spaces that inspire comfort and care for the planet.</p>
+          <p>A future where eco-friendly living is part of every home.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container center">
+        <h2>Core Values</h2>
+        <div class="grid values">
+          <div class="value"><img src="{% static 'website/images/img19.jpg' %}" alt="Sustainability"/><p>Sustainability</p></div>
+          <div class="value"><img src="{% static 'website/images/img20.jpg' %}" alt="Creativity"/><p>Creativity</p></div>
+          <div class="value"><img src="{% static 'website/images/img21.jpg' %}" alt="Comfort"/><p>Comfort</p></div>
+          <div class="value"><img src="{% static 'website/images/img22.jpg' %}" alt="Responsibility"/><p>Responsibility</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section team">
+      <div class="container">
+        <h2>Meet the Team</h2>
+        <div class="grid team-grid">
+          <div class="member">
+            <img src="{% static 'website/images/img23.jpg' %}" alt="Team member" />
+          </div>
+          <div class="member">
+            <img src="{% static 'website/images/img24.jpg' %}" alt="Team member" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bar">
+      <div class="container center">
+        <p>Ready to transform your home sustainably?</p>
+        <a class="button primary" href="{% url 'contact' %}">Book a Consultation</a>
+      </div>
+    </section>
+</main>
+
+{% endblock %}
