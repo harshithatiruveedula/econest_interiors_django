@@ -19,40 +19,23 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Consultation
 
+from django.shortcuts import render, redirect
+from .models import Consultation
+
 def contact(request):
     if request.method == "POST":
-        # Check if it's an AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            try:
-                consultation = Consultation.objects.create(
-                    name=request.POST.get("name"),
-                    email=request.POST.get("email"),
-                    phone=request.POST.get("phone"),
-                    service=request.POST.get("service"),
-                    appointment_date=request.POST.get("appointment_date"),
-                )
-                return JsonResponse({
-                    "success": True,
-                    "message": "Your consultation has booked successfully (demo only)"
-                })
-            except Exception as e:
-                return JsonResponse({
-                    "success": False,
-                    "message": f"Error: {str(e)}"
-                }, status=400)
-        else:
-            # Regular form submission (fallback)
-            Consultation.objects.create(
-                name=request.POST.get("name"),
-                email=request.POST.get("email"),
-                phone=request.POST.get("phone"),
-                service=request.POST.get("service"),
-                appointment_date=request.POST.get("appointment_date"),
-            )
-            return render(request, "main/contact.html", {"success": True})
+        Consultation.objects.create(
+            name=request.POST.get('name'),
+            email=request.POST.get('email'),
+            phone=request.POST.get('phone'),
+            service=request.POST.get('service'),
+            appointment_date=request.POST.get('appointment_date'),
+        )
+        return redirect('/contact/?success=1')
 
-    return render(request, "main/contact.html")
-
+    return render(request, 'main/contact.html', {
+        'success': request.GET.get('success')
+    })
 
 
 from .models import GalleryImage
