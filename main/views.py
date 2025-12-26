@@ -115,24 +115,81 @@ def dashboard_access(request):
 
 @staff_member_required
 def dashboard(request):
-    total_bookings = Consultation.objects.count()
-    total_services = Service.objects.count()
-    total_images = GalleryImage.objects.count()
-    total_posts = BlogPost.objects.count()
+    try:
+        # Safely get counts with error handling
+        try:
+            total_bookings = Consultation.objects.count()
+        except Exception as e:
+            logger.error(f"Error counting consultations: {str(e)}")
+            total_bookings = 0
+            # Check if it's a migration issue
+            if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
+                messages.error(request, "Database tables not found. Please run migrations: /setup/?key=setup123")
+        
+        try:
+            total_services = Service.objects.count()
+        except Exception as e:
+            logger.error(f"Error counting services: {str(e)}")
+            total_services = 0
+        
+        try:
+            total_images = GalleryImage.objects.count()
+        except Exception as e:
+            logger.error(f"Error counting gallery images: {str(e)}")
+            total_images = 0
+        
+        try:
+            total_posts = BlogPost.objects.count()
+        except Exception as e:
+            logger.error(f"Error counting blog posts: {str(e)}")
+            total_posts = 0
 
-    # Show all bookings, not just recent 5
-    all_bookings = Consultation.objects.all().order_by('-submitted_at')
+        # Show all bookings, not just recent 5
+        try:
+            all_bookings = Consultation.objects.all().order_by('-submitted_at')
+        except Exception as e:
+            logger.error(f"Error fetching consultations: {str(e)}")
+            all_bookings = []
+            if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
+                messages.warning(request, "Consultations table not found. Run migrations to fix this.")
 
-    context = {
-        "total_bookings": total_bookings,
-        "total_services": total_services,
-        "total_images": total_images,
-        "total_posts": total_posts,
-        "recent_bookings": all_bookings,  # Changed to show all
-        "all_bookings": all_bookings,  # Added for clarity
-    }
+        context = {
+            "total_bookings": total_bookings,
+            "total_services": total_services,
+            "total_images": total_images,
+            "total_posts": total_posts,
+            "recent_bookings": all_bookings,  # Changed to show all
+            "all_bookings": all_bookings,  # Added for clarity
+        }
 
-    return render(request, 'main/dashboard.html', context)
+        return render(request, 'main/dashboard.html', context)
+    except Exception as e:
+        logger.error(f"Dashboard error: {str(e)}")
+        import traceback
+        error_trace = traceback.format_exc()
+        logger.error(error_trace)
+        
+        # Check if it's a migration issue
+        if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
+            error_msg = (
+                "<h1>Database Setup Required</h1>"
+                "<p>The database tables haven't been created yet.</p>"
+                "<p><strong>Solution:</strong> Run migrations to create the tables.</p>"
+                "<p><a href='/setup/?key=setup123' style='background:#0066cc;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Run Setup (Migrations)</a></p>"
+                "<p><a href='/create-admin/' style='background:#28a745;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Create Admin</a></p>"
+                "<p><a href='/admin/' style='background:#6c757d;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Admin Panel</a></p>"
+            )
+        else:
+            error_msg = (
+                f"<h1>Dashboard Error</h1>"
+                f"<p>An error occurred while loading the dashboard.</p>"
+                f"<p><strong>Error:</strong> {str(e)}</p>"
+                f"<p><a href='/admin/' style='background:#0066cc;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Go to Admin Panel</a></p>"
+                f"<p><a href='/' style='background:#6c757d;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Go to Home</a></p>"
+            )
+        
+        from django.http import HttpResponseServerError
+        return HttpResponseServerError(error_msg)
 
 
 @staff_member_required
