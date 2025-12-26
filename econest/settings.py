@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'whitenoise.runserver_nostatic',
-    'website',
     'main',
 ]
 
@@ -77,14 +76,11 @@ WSGI_APPLICATION = 'econest.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-import dj_database_url
-
-# Database
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
@@ -156,5 +152,4 @@ SESSION_COOKIE_SECURE = not DEBUG  # True in production, False in development
 
 # CSRF failure view - return JSON for AJAX requests
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
-
 
