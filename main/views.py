@@ -109,6 +109,10 @@ def blog_detail(request, id):
     post = BlogPost.objects.get(id=id)
     return render(request, 'main/blog_detail.html', {'post': post})
 
+def dashboard_access(request):
+    """Dashboard access page - shows login status and provides access"""
+    return render(request, 'main/dashboard_access.html')
+
 @staff_member_required
 def dashboard(request):
     total_bookings = Consultation.objects.count()

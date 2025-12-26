@@ -153,3 +153,7 @@ SESSION_COOKIE_SECURE = not DEBUG  # True in production, False in development
 # CSRF failure view - return JSON for AJAX requests
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 
+# Login settings
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+

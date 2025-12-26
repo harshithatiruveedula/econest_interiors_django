@@ -1,0 +1,68 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Access - EcoNest Interiors{% endblock %}
+
+{% block content %}
+
+<section class="section">
+  <div class="container" style="max-width: 600px; margin: 0 auto;">
+    <h2 class="text-center" style="margin-bottom: 30px;">Admin Dashboard Access</h2>
+
+    {% if user.is_authenticated %}
+      {% if user.is_staff %}
+        <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+          <p style="margin: 0; color: #155724;"><strong>✅ You have access!</strong></p>
+          <p style="margin: 10px 0 0 0;">You are logged in as a staff member.</p>
+        </div>
+        <div style="text-align: center;">
+          <a href="{% url 'dashboard' %}" style="background: #0066cc; color: #fff; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 18px;">
+            Go to Dashboard →
+          </a>
+        </div>
+      {% else %}
+        <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+          <p style="margin: 0; color: #856404;"><strong>⚠️ Access Restricted</strong></p>
+          <p style="margin: 10px 0 0 0;">You are logged in, but you don't have staff privileges.</p>
+          <p style="margin: 10px 0 0 0;">Please contact an administrator to grant you staff access.</p>
+        </div>
+        <div style="text-align: center;">
+          <a href="{% url 'admin:index' %}" style="background: #6c757d; color: #fff; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;">
+            Go to Admin Panel
+          </a>
+          <a href="{% url 'home' %}" style="background: #999; color: #fff; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Back to Home
+          </a>
+        </div>
+      {% endif %}
+    {% else %}
+      <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+        <p style="margin: 0; color: #721c24;"><strong>🔒 Login Required</strong></p>
+        <p style="margin: 10px 0 0 0;">You need to be logged in as a staff member to access the dashboard.</p>
+      </div>
+      <div style="text-align: center;">
+        <a href="{% url 'admin:login' %}?next={% url 'dashboard' %}" style="background: #0066cc; color: #fff; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-size: 18px; margin-right: 10px;">
+          Login to Admin
+        </a>
+        <a href="{% url 'home' %}" style="background: #999; color: #fff; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+          Back to Home
+        </a>
+      </div>
+      
+      <div style="margin-top: 30px; padding: 20px; background: #f7f7f7; border-radius: 10px;">
+        <h3 style="margin-top: 0;">Need to create an admin account?</h3>
+        <p>If you haven't created an admin account yet, visit:</p>
+        <p style="text-align: center; margin: 15px 0;">
+          <a href="{% url 'create_admin' %}" style="color: #0066cc; font-weight: bold;">
+            /create-admin/
+          </a>
+        </p>
+        <p style="font-size: 14px; color: #666;">This will create an admin user with username: <strong>admin</strong> and password: <strong>Admin@123</strong></p>
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+
+{% endblock %}
+
