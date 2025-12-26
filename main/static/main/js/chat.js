@@ -8,6 +8,11 @@
     
     // Create chat widget HTML
     function createChatWidget() {
+        // Check if widget already exists
+        if (document.getElementById('ai-chat-widget')) {
+            return;
+        }
+        
         const chatWidget = document.createElement('div');
         chatWidget.id = 'ai-chat-widget';
         chatWidget.innerHTML = `

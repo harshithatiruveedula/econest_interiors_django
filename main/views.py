@@ -1,7 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render
-from .models import Consultation
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponseNotFound
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from .models import Consultation, Service, GalleryImage, BlogPost
+import json
+import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 def home(request):
     return render(request, 'main/index.html')
@@ -10,62 +18,96 @@ def about(request):
     return render(request, 'main/about.html')
 
 def services(request):
-    from .models import Service
     all_services = Service.objects.all()
     return render(request, 'main/services.html', {"services": all_services})
 
-
-from django.shortcuts import render
-from django.http import JsonResponse
-from .models import Consultation
-
-from django.shortcuts import render, redirect
-from .models import Consultation
-
 def contact(request):
     if request.method == "POST":
-        Consultation.objects.create(
-            name=request.POST.get('name'),
-            email=request.POST.get('email'),
-            phone=request.POST.get('phone'),
-            service=request.POST.get('service'),
-            appointment_date=request.POST.get('appointment_date'),
-        )
-        return redirect('/contact/?success=1')
+        # Check if it's an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        try:
+            # Get form data
+            name = request.POST.get('name', '').strip()
+            email = request.POST.get('email', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            service = request.POST.get('service', '').strip()
+            appointment_date = request.POST.get('appointment_date', '').strip()
+            
+            # Validate required fields
+            if not name:
+                raise ValidationError("Name is required")
+            if not email:
+                raise ValidationError("Email is required")
+            if not phone:
+                raise ValidationError("Phone is required")
+            if not service:
+                raise ValidationError("Service is required")
+            if not appointment_date:
+                raise ValidationError("Appointment date is required")
+            
+            # Create consultation
+            consultation = Consultation.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                service=service,
+                appointment_date=appointment_date,
+            )
+            
+            # Return JSON response for AJAX requests
+            if is_ajax:
+                return JsonResponse({
+                    "success": True,
+                    "message": "Your consultation has been booked successfully!"
+                })
+            else:
+                # Fallback for non-AJAX requests
+                return render(request, 'main/contact.html', {
+                    'success': True,
+                    'message': 'Your consultation has been booked successfully!'
+                })
+                
+        except ValidationError as e:
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": str(e)
+                }, status=400)
+            else:
+                return render(request, 'main/contact.html', {
+                    'error': str(e)
+                })
+        except Exception as e:
+            # Log the error for debugging
+            logger.error(f"Error creating consultation: {str(e)}")
+            
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"An error occurred: {str(e)}"
+                }, status=500)
+            else:
+                return render(request, 'main/contact.html', {
+                    'error': 'An error occurred. Please try again.'
+                })
 
     return render(request, 'main/contact.html', {
         'success': request.GET.get('success')
     })
 
 
-from .models import GalleryImage
-
 def gallery(request):
     photos = GalleryImage.objects.all()
     return render(request, 'main/gallery.html', {"photos": photos})
-from .models import BlogPost
 
 def blog_list(request):
     posts = BlogPost.objects.all().order_by('-created_at')
     return render(request, 'main/blog_list.html', {'posts': posts})
 
-
 def blog_detail(request, id):
     post = BlogPost.objects.get(id=id)
     return render(request, 'main/blog_detail.html', {'post': post})
-from .models import Consultation, Service, GalleryImage, BlogPost
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .models import Consultation
-
-@login_required(login_url='/admin/login/')
-def dashboard(request):
-    consultations = Consultation.objects.all().order_by('-created_at')
-    return render(request, 'main/dashboard.html', {
-        'consultations': consultations
-    })
-
 
 @staff_member_required
 def dashboard(request):
@@ -74,17 +116,113 @@ def dashboard(request):
     total_images = GalleryImage.objects.count()
     total_posts = BlogPost.objects.count()
 
-    recent_bookings = Consultation.objects.order_by('-submitted_at')[:5]
+    # Show all bookings, not just recent 5
+    all_bookings = Consultation.objects.all().order_by('-submitted_at')
 
     context = {
         "total_bookings": total_bookings,
         "total_services": total_services,
         "total_images": total_images,
         "total_posts": total_posts,
-        "recent_bookings": recent_bookings,
+        "recent_bookings": all_bookings,  # Changed to show all
+        "all_bookings": all_bookings,  # Added for clarity
     }
 
     return render(request, 'main/dashboard.html', context)
+
+
+@staff_member_required
+def edit_consultation(request, id):
+    """Edit a consultation"""
+    try:
+        consultation = Consultation.objects.get(id=id)
+    except Consultation.DoesNotExist:
+        return HttpResponseNotFound("Consultation not found")
+    
+    if request.method == "POST":
+        # Check if it's an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        try:
+            consultation.name = request.POST.get('name', '').strip()
+            consultation.email = request.POST.get('email', '').strip()
+            consultation.phone = request.POST.get('phone', '').strip()
+            consultation.service = request.POST.get('service', '').strip()
+            appointment_date = request.POST.get('appointment_date', '').strip()
+            
+            if appointment_date:
+                consultation.appointment_date = appointment_date
+            
+            consultation.save()
+            
+            if is_ajax:
+                return JsonResponse({
+                    "success": True,
+                    "message": "Consultation updated successfully!"
+                })
+            else:
+                messages.success(request, 'Consultation updated successfully!')
+                return redirect('dashboard')
+        except Exception as e:
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error: {str(e)}"
+                }, status=400)
+            else:
+                messages.error(request, f'Error: {str(e)}')
+    
+    return render(request, 'main/edit_consultation.html', {
+        'consultation': consultation
+    })
+
+
+@staff_member_required
+def delete_consultation(request, id):
+    """Delete a consultation"""
+    if request.method == "POST":
+        try:
+            consultation = Consultation.objects.get(id=id)
+            consultation.delete()
+            
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            if is_ajax:
+                return JsonResponse({
+                    "success": True,
+                    "message": "Consultation deleted successfully!"
+                })
+            else:
+                messages.success(request, 'Consultation deleted successfully!')
+                return redirect('dashboard')
+        except Consultation.DoesNotExist:
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Consultation not found"
+                }, status=404)
+            else:
+                messages.error(request, 'Consultation not found')
+                return redirect('dashboard')
+        except Exception as e:
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error: {str(e)}"
+                }, status=500)
+            else:
+                messages.error(request, f'Error: {str(e)}')
+                return redirect('dashboard')
+    
+    # If GET request, show confirmation page
+    try:
+        consultation = Consultation.objects.get(id=id)
+        return render(request, 'main/delete_consultation.html', {
+            'consultation': consultation
+        })
+    except Consultation.DoesNotExist:
+        return HttpResponseNotFound("Consultation not found")
 
 
 def chat_ai(request):
@@ -215,11 +353,72 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 
 def create_admin(request):
+    """Create admin user - accessible via URL"""
     if not User.objects.filter(username='admin').exists():
         User.objects.create_superuser(
             username='admin',
             email='admin@example.com',
             password='Admin@123'
         )
-        return HttpResponse("Admin created")
+        return HttpResponse("Admin created successfully! Username: admin, Password: Admin@123<br><br>⚠️ IMPORTANT: Change this password immediately after first login!")
     return HttpResponse("Admin already exists")
+
+def setup_view(request):
+    """
+    Setup view to run migrations and create admin.
+    Can be accessed without authentication for initial setup.
+    For security, consider removing this after setup or protecting it.
+    """
+    from django.core.management import call_command
+    from io import StringIO
+    import sys
+    
+    # Optional: Add a simple password check for security
+    setup_key = request.GET.get('key', '')
+    expected_key = os.environ.get('SETUP_KEY', 'setup123')  # Change this in production!
+    
+    if setup_key != expected_key:
+        return HttpResponse(
+            "<h2>Setup Access</h2>"
+            "<p>Add ?key=setup123 to the URL to run setup.</p>"
+            "<p><strong>Example:</strong> /setup/?key=setup123</p>"
+            "<p><em>For security, set SETUP_KEY environment variable and remove this view after setup.</em></p>",
+            status=403
+        )
+    
+    output = StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = output
+    
+    messages = []
+    
+    try:
+        # Run migrations
+        call_command('migrate', verbosity=0, interactive=False)
+        messages.append("✅ Migrations completed successfully")
+        
+        # Create admin if doesn't exist
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@example.com',
+                password='Admin@123'
+            )
+            messages.append("✅ Admin user created (username: admin, password: Admin@123)")
+            messages.append("⚠️ <strong>IMPORTANT: Change this password immediately!</strong>")
+        else:
+            messages.append("ℹ️ Admin user already exists")
+            
+        # Collect static files
+        call_command('collectstatic', verbosity=0, interactive=False, clear=False)
+        messages.append("✅ Static files collected")
+        
+    except Exception as e:
+        messages.append(f"❌ Error: {str(e)}")
+        import traceback
+        messages.append(f"<pre>{traceback.format_exc()}</pre>")
+    finally:
+        sys.stdout = old_stdout
+    
+    result = "<br>".join(messages)
+    return HttpResponse(f"<h2>Setup Complete</h2><p>{result}</p>")
