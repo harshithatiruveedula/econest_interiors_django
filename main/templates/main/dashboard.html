@@ -1,14 +1,101 @@
 {% extends 'main/base.html' %}
 {% load static %}
 
+{% block title %}Admin Dashboard - EcoNest Interiors{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+  .dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-width: 800px;
+  }
+  .dashboard-table thead tr {
+    background: #2e7d32;
+    color: #fff;
+  }
+  .dashboard-table th {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-weight: 600;
+  }
+  .dashboard-table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+  }
+  .dashboard-table tbody tr:hover {
+    background: #f9fafb;
+  }
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .btn-edit {
+    background: #0066cc;
+    color: #fff;
+    padding: 6px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .btn-edit:hover {
+    background: #0052a3;
+    color: #fff;
+  }
+  .btn-delete {
+    background: #dc3545;
+    color: #fff;
+    padding: 6px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .btn-delete:hover {
+    background: #c82333;
+    color: #fff;
+  }
+  @media (max-width: 768px) {
+    .dashboard-table-container {
+      margin: 0 -20px;
+      padding: 0 20px;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <section class="section">
   <div class="container">
-    <div style="text-align: center; margin-bottom: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
       <h2 style="margin-bottom: 10px;">Admin Dashboard</h2>
       <p style="color: #666; margin: 0;">Welcome{% if user.is_authenticated %}, {{ user.username|default:"Admin" }}{% endif %}! Manage your consultations here.</p>
     </div>
+
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+      {% for message in messages %}
+      <div style="padding: 12px; margin-bottom: 10px; border-radius: 5px; 
+                  {% if message.tags == 'error' %}background: #fee; border: 1px solid #fcc; color: #c33;
+                  {% elif message.tags == 'warning' %}background: #ffc; border: 1px solid #fc9; color: #963;
+                  {% else %}background: #efe; border: 1px solid #cfc; color: #363;{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;">
 
@@ -34,47 +121,62 @@
 
     </div>
 
-    <h3 style="margin-top:40px;margin-bottom:15px;">All Bookings ({{ total_bookings }})</h3>
+    <div style="margin-top:40px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;">All Bookings ({{ total_bookings }})</h3>
+      {% if total_bookings > 0 %}
+      <a href="{% url 'dashboard' %}" style="background:#28a745;color:#fff;padding:8px 16px;text-decoration:none;border-radius:5px;font-size:14px;">Refresh</a>
+      {% endif %}
+    </div>
 
-    <table style="width:100%;border-collapse:collapse;">
-      <tr style="background:#333;color:#fff;">
-        <th style="padding:10px;border:1px solid #ccc;">ID</th>
-        <th style="padding:10px;border:1px solid #ccc;">Name</th>
-        <th style="padding:10px;border:1px solid #ccc;">Email</th>
-        <th style="padding:10px;border:1px solid #ccc;">Phone</th>
-        <th style="padding:10px;border:1px solid #ccc;">Service</th>
-        <th style="padding:10px;border:1px solid #ccc;">Preferred Date</th>
-        <th style="padding:10px;border:1px solid #ccc;">Submitted At</th>
-        <th style="padding:10px;border:1px solid #ccc;">Actions</th>
-      </tr>
-
-      {% for b in all_bookings %}
-      <tr>
-        <td style="padding:10px;border:1px solid #ccc;">{{ b.id }}</td>
-        <td style="padding:10px;border:1px solid #ccc;">{{ b.name }}</td>
-        <td style="padding:10px;border:1px solid #ccc;">{{ b.email }}</td>
-        <td style="padding:10px;border:1px solid #ccc;">{{ b.phone }}</td>
-        <td style="padding:10px;border:1px solid #ccc;">{{ b.service }}</td>
-        <td style="padding:10px;border:1px solid #ccc;color:#0066cc;font-weight:bold;">
-          {% if b.appointment_date %}
-            {{ b.appointment_date|date:"F d, Y" }}
-          {% else %}
-            <span style="color:#999;">Not specified</span>
-          {% endif %}
-        </td>
-        <td style="padding:10px;border:1px solid #ccc;">{{ b.submitted_at|date:"F d, Y g:i A" }}</td>
-        <td style="padding:10px;border:1px solid #ccc;">
-          <a href="{% url 'edit_consultation' b.id %}" style="background:#0066cc;color:#fff;padding:5px 10px;text-decoration:none;border-radius:3px;margin-right:5px;display:inline-block;">Edit</a>
-          <a href="{% url 'delete_consultation' b.id %}" style="background:#cc0000;color:#fff;padding:5px 10px;text-decoration:none;border-radius:3px;display:inline-block;" onclick="return confirm('Are you sure you want to delete this consultation?');">Delete</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="8" style="padding:10px;border:1px solid #ccc;text-align:center;">No bookings yet</td>
-      </tr>
-      {% endfor %}
-
-    </table>
+    <div class="dashboard-table-container">
+      <table class="dashboard-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Service</th>
+            <th>Preferred Date</th>
+            <th>Submitted At</th>
+            <th style="text-align:center;min-width:150px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in all_bookings %}
+          <tr>
+            <td>{{ b.id }}</td>
+            <td style="font-weight:500;">{{ b.name }}</td>
+            <td><a href="mailto:{{ b.email }}" style="color:#0066cc;text-decoration:none;">{{ b.email }}</a></td>
+            <td><a href="tel:{{ b.phone }}" style="color:#0066cc;text-decoration:none;">{{ b.phone }}</a></td>
+            <td>{{ b.service }}</td>
+            <td style="color:#0066cc;font-weight:bold;">
+              {% if b.appointment_date %}
+                {{ b.appointment_date|date:"F d, Y" }}
+              {% else %}
+                <span style="color:#999;">Not specified</span>
+              {% endif %}
+            </td>
+            <td style="color:#666;font-size:14px;">{{ b.submitted_at|date:"M d, Y g:i A" }}</td>
+            <td style="text-align:center;">
+              <div class="action-buttons">
+                <a href="{% url 'edit_consultation' b.id %}" class="btn-edit">Edit</a>
+                <a href="{% url 'delete_consultation' b.id %}" class="btn-delete" 
+                   onclick="return confirm('Are you sure you want to delete this consultation? This action cannot be undone.');">Delete</a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" style="padding:40px;text-align:center;color:#666;">
+              <p style="margin:0;font-size:16px;">No bookings yet</p>
+              <p style="margin:10px 0 0 0;font-size:14px;color:#999;">Consultations will appear here once customers submit the form.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
   </div>
 </section>
