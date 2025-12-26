@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
-  <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+  <link rel="stylesheet" href="{% static 'main/css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'main/css/chat.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
 
@@ -21,7 +21,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="{% url 'home' %}">
-        <img class="brand-logo" src="{% static 'website/images/img34.jpg' %}" alt="EcoNest logo"/>
+        <img class="brand-logo" src="{% static 'main/images/img34.jpg' %}" alt="EcoNest logo"/>
         EcoNest Interiors
       </a>
 
@@ -74,8 +74,9 @@
     </div>
   </footer>
 
-  <script src="{% static 'website/js/main.js' %}"></script>
-  <script src="{% static 'js/chat.js' %}"></script>
+  <script src="{% static 'main/js/main.js' %}"></script>
+  <script src="{% static 'main/js/chat.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
+
