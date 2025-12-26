@@ -10,6 +10,7 @@ urlpatterns = [
     path('setup/', views.setup_view, name='setup'),
     path('dashboard-access/', views.dashboard_access, name='dashboard_access'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/consultation/create/', views.create_consultation, name='create_consultation'),
     path('dashboard/consultation/<int:id>/edit/', views.edit_consultation, name='edit_consultation'),
     path('dashboard/consultation/<int:id>/delete/', views.delete_consultation, name='delete_consultation'),
     path('api/chat/', views.chat_ai, name='chat_ai'),

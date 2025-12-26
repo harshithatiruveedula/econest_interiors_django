@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponseNotFound
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from .models import Consultation, Service, GalleryImage, BlogPost
+from django.db.models import Q
 import json
 import logging
 import os
@@ -144,22 +145,64 @@ def dashboard(request):
             logger.error(f"Error counting blog posts: {str(e)}")
             total_posts = 0
 
-        # Show all bookings, not just recent 5
+        # Get search query
+        search_query = request.GET.get('search', '').strip()
+        
+        # Get filter parameters
+        filter_service = request.GET.get('service', '').strip()
+        filter_date_from = request.GET.get('date_from', '').strip()
+        filter_date_to = request.GET.get('date_to', '').strip()
+
+        # Start with all bookings
         try:
-            all_bookings = Consultation.objects.all().order_by('-submitted_at')
+            all_bookings = Consultation.objects.all()
+            
+            # Apply search filter
+            if search_query:
+                all_bookings = all_bookings.filter(
+                    Q(name__icontains=search_query) |
+                    Q(email__icontains=search_query) |
+                    Q(phone__icontains=search_query) |
+                    Q(service__icontains=search_query)
+                )
+            
+            # Apply service filter
+            if filter_service:
+                all_bookings = all_bookings.filter(service=filter_service)
+            
+            # Apply date filters
+            if filter_date_from:
+                all_bookings = all_bookings.filter(appointment_date__gte=filter_date_from)
+            if filter_date_to:
+                all_bookings = all_bookings.filter(appointment_date__lte=filter_date_to)
+            
+            # Order by submitted date (newest first)
+            all_bookings = all_bookings.order_by('-submitted_at')
+            
         except Exception as e:
             logger.error(f"Error fetching consultations: {str(e)}")
             all_bookings = []
             if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
                 messages.warning(request, "Consultations table not found. Run migrations to fix this.")
 
+        # Get unique services for filter dropdown
+        try:
+            unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
+        except:
+            unique_services = []
+
         context = {
             "total_bookings": total_bookings,
             "total_services": total_services,
             "total_images": total_images,
             "total_posts": total_posts,
-            "recent_bookings": all_bookings,  # Changed to show all
-            "all_bookings": all_bookings,  # Added for clarity
+            "recent_bookings": all_bookings,
+            "all_bookings": all_bookings,
+            "search_query": search_query,
+            "filter_service": filter_service,
+            "filter_date_from": filter_date_from,
+            "filter_date_to": filter_date_to,
+            "unique_services": unique_services,
         }
 
         return render(request, 'main/dashboard.html', context)
@@ -191,6 +234,86 @@ def dashboard(request):
         from django.http import HttpResponseServerError
         return HttpResponseServerError(error_msg)
 
+
+@staff_member_required
+def create_consultation(request):
+    """Create a new consultation"""
+    if request.method == "POST":
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        try:
+            name = request.POST.get('name', '').strip()
+            email = request.POST.get('email', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            service = request.POST.get('service', '').strip()
+            appointment_date = request.POST.get('appointment_date', '').strip()
+            
+            if not name:
+                raise ValidationError("Name is required")
+            if not email:
+                raise ValidationError("Email is required")
+            if not phone:
+                raise ValidationError("Phone is required")
+            if not service:
+                raise ValidationError("Service is required")
+            if not appointment_date:
+                raise ValidationError("Appointment date is required")
+            
+            consultation = Consultation.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                service=service,
+                appointment_date=appointment_date,
+            )
+            
+            if is_ajax:
+                return JsonResponse({
+                    "success": True,
+                    "message": "Consultation created successfully!"
+                })
+            else:
+                messages.success(request, 'Consultation created successfully!')
+                return redirect('dashboard')
+        except ValidationError as e:
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": str(e)
+                }, status=400)
+            else:
+                messages.error(request, str(e))
+        except Exception as e:
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error: {str(e)}"
+                }, status=500)
+            else:
+                messages.error(request, f'Error: {str(e)}')
+    
+    # Get unique services for dropdown
+    try:
+        unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
+        # If no services exist, use default options
+        if not unique_services:
+            unique_services = [
+                'Interior design consultation',
+                'Custom eco-friendly furniture',
+                'Renovation with sustainable materials',
+                'Green spaces and indoor plants'
+            ]
+    except:
+        unique_services = [
+            'Interior design consultation',
+            'Custom eco-friendly furniture',
+            'Renovation with sustainable materials',
+            'Green spaces and indoor plants'
+        ]
+    
+    return render(request, 'main/create_consultation.html', {
+        'unique_services': unique_services
+    })
 
 @staff_member_required
 def edit_consultation(request, id):
