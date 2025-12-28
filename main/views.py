@@ -22,63 +22,77 @@ def ensure_migrations_run():
             logger.info("Tables not found. Running migrations automatically...")
             try:
                 from django.core.management import call_command
-                from django.db import connection
+                from django.db import connections
+                import sys
+                from io import StringIO
                 
-                # Close any existing connections
+                # Close all database connections
                 try:
-                    connection.close()
+                    for conn in connections.all():
+                        conn.close()
                 except:
                     pass
                 
-                # Run migrations - simplified approach
+                # Capture stdout to see migration output
+                old_stdout = sys.stdout
+                sys.stdout = StringIO()
+                
                 try:
-                    call_command('migrate', verbosity=0, interactive=False, run_syncdb=True)
-                    logger.info("Migrations completed successfully.")
+                    # Run migrations for main app specifically
+                    call_command('migrate', 'main', verbosity=2, interactive=False)
+                    output = sys.stdout.getvalue()
+                    logger.info(f"Migration output: {output}")
                 except Exception as migrate_cmd_error:
                     logger.error(f"Migration command error: {str(migrate_cmd_error)}")
-                    # Try again with different approach
+                    # Try running all migrations
                     try:
-                        from django.core import management
-                        management.call_command('migrate', verbosity=0, interactive=False)
-                        logger.info("Migrations completed on retry.")
+                        sys.stdout = StringIO()
+                        call_command('migrate', verbosity=2, interactive=False)
+                        output = sys.stdout.getvalue()
+                        logger.info(f"Migration output (all apps): {output}")
                     except Exception as retry_error:
                         logger.error(f"Migration retry failed: {str(retry_error)}")
+                        import traceback
+                        logger.error(traceback.format_exc())
+                        sys.stdout = old_stdout
                         return False
+                finally:
+                    sys.stdout = old_stdout
                 
-                # Close connection to force reconnection
+                # Close all connections again
                 try:
-                    connection.close()
+                    for conn in connections.all():
+                        conn.close()
                 except:
                     pass
                 
                 # Wait a moment for database to be ready
                 import time
-                time.sleep(0.3)
+                time.sleep(0.5)
                 
-                # Verify tables exist now
+                # Verify tables exist now by forcing a new connection
                 try:
-                    # Force new connection
-                    from django.db import connections
-                    connections['default'].close()
-                    Consultation.objects.exists()
-                    logger.info("Tables verified after migration")
+                    from django.db import connection
+                    connection.ensure_connection()
+                    test_result = Consultation.objects.exists()
+                    logger.info(f"Tables verified after migration: {test_result}")
                     return True
                 except Exception as verify_error:
                     logger.error(f"Tables still don't exist after migration: {str(verify_error)}")
-                    # Return True anyway - let the actual query handle the error
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    # Still return True - let the actual operation try
                     return True
                     
             except Exception as migrate_error:
                 logger.error(f"Auto-migration failed: {str(migrate_error)}")
                 import traceback
                 logger.error(traceback.format_exc())
-                # Return True to allow the request to proceed - error will be caught later
-                return True
+                return False
         else:
-            # Different error, not a missing table - might be a different issue
+            # Different error, not a missing table
             logger.error(f"Database error (not missing table): {str(e)}")
-            # Return True to allow the request to proceed
-            return True
+            return False
 
 def home(request):
     return render(request, 'main/index.html')
@@ -96,7 +110,19 @@ def contact(request):
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         # Ensure migrations are run before creating consultation
-        ensure_migrations_run()  # Always try, but don't block if it fails
+        migration_success = ensure_migrations_run()
+        if not migration_success:
+            error_msg = "Database setup is in progress. Please try again in a moment."
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": error_msg
+                }, status=503)  # Service Unavailable
+            else:
+                messages.error(request, error_msg)
+                return render(request, 'main/contact.html', {
+                    'success': None
+                })
         
         try:
             # Get form data
@@ -133,34 +159,14 @@ def contact(request):
             except ValueError as ve:
                 raise ValidationError(f"Invalid date format: {str(ve)}. Please use YYYY-MM-DD format.")
             
-            # Create consultation with error handling
-            try:
-                consultation = Consultation.objects.create(
-                    name=name,
-                    email=email,
-                    phone=phone,
-                    service=service,
-                    appointment_date=parsed_date,
-                )
-            except Exception as db_error:
-                error_str = str(db_error).lower()
-                if "no such table" in error_str or "does not exist" in error_str:
-                    # Try running migrations one more time
-                    logger.warning("Table still missing, attempting migration again...")
-                    ensure_migrations_run()
-                    # Try creating again
-                    try:
-                        consultation = Consultation.objects.create(
-                            name=name,
-                            email=email,
-                            phone=phone,
-                            service=service,
-                            appointment_date=parsed_date,
-                        )
-                    except Exception as retry_error:
-                        raise Exception(f"Database error: Unable to save consultation. Please try again in a moment.")
-                else:
-                    raise
+            # Create consultation
+            consultation = Consultation.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                service=service,
+                appointment_date=parsed_date,
+            )
             
             # Return JSON response for AJAX requests
             if is_ajax:
@@ -352,7 +358,29 @@ def create_consultation(request):
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         # Ensure migrations are run before creating consultation
-        ensure_migrations_run()  # Always try, but don't block if it fails
+        migration_success = ensure_migrations_run()
+        if not migration_success:
+            error_msg = "Database setup is in progress. Please try again in a moment."
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": error_msg
+                }, status=503)  # Service Unavailable
+            else:
+                messages.error(request, error_msg)
+                # Get unique services for dropdown even on error
+                try:
+                    unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
+                except:
+                    unique_services = [
+                        'Interior design consultation',
+                        'Custom eco-friendly furniture',
+                        'Renovation with sustainable materials',
+                        'Green spaces and indoor plants'
+                    ]
+                return render(request, 'main/create_consultation.html', {
+                    'unique_services': unique_services
+                })
         
         try:
             name = request.POST.get('name', '').strip()
@@ -387,34 +415,14 @@ def create_consultation(request):
             except ValueError as ve:
                 raise ValidationError(f"Invalid date format: {str(ve)}. Please use YYYY-MM-DD format.")
             
-            # Create consultation with error handling
-            try:
-                consultation = Consultation.objects.create(
-                    name=name,
-                    email=email,
-                    phone=phone,
-                    service=service,
-                    appointment_date=parsed_date,
-                )
-            except Exception as db_error:
-                error_str = str(db_error).lower()
-                if "no such table" in error_str or "does not exist" in error_str:
-                    # Try running migrations one more time
-                    logger.warning("Table still missing, attempting migration again...")
-                    ensure_migrations_run()
-                    # Try creating again
-                    try:
-                        consultation = Consultation.objects.create(
-                            name=name,
-                            email=email,
-                            phone=phone,
-                            service=service,
-                            appointment_date=parsed_date,
-                        )
-                    except Exception as retry_error:
-                        raise Exception(f"Database error: Unable to save consultation. Please try again in a moment.")
-                else:
-                    raise
+            # Create consultation
+            consultation = Consultation.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                service=service,
+                appointment_date=parsed_date,
+            )
             
             if is_ajax:
                 return JsonResponse({
