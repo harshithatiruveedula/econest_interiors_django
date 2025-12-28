@@ -133,27 +133,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CSRF Trusted Origins for Render deployment
-# Set CSRF_TRUSTED_ORIGINS in Render environment variables with your actual domain
-# Example: https://your-app-name.onrender.com
-csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '').strip()
-if csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins.split(',') if origin.strip()]
-else:
-    # Empty list - you should set CSRF_TRUSTED_ORIGINS in environment variables
-    # For local development, this is okay
-    CSRF_TRUSTED_ORIGINS = []
-
-# Additional CSRF settings
-# In production (when DEBUG=False), these should be True
-CSRF_COOKIE_SECURE = not DEBUG  # True in production, False in development
-CSRF_COOKIE_HTTPONLY = False  # Must be False for JavaScript to access the token
-SESSION_COOKIE_SECURE = not DEBUG  # True in production, False in development
-
-# CSRF failure view - return JSON for AJAX requests
-CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
-
-# Login settings
-LOGIN_URL = '/admin/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com"
+]
 
