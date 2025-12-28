@@ -466,34 +466,29 @@ def create_consultation(request):
     # Ensure migrations are run before getting unique services
     try:
         ensure_migrations_run()
-        
-        # Get unique services for dropdown
-        try:
-            unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
-            if not unique_services:
-                unique_services = [
-                    'Interior design consultation',
-                    'Custom eco-friendly furniture',
-                    'Renovation with sustainable materials',
-                    'Green spaces and indoor plants'
-                ]
-        except Exception as e:
-            logger.error(f"Error getting unique services: {str(e)}")
-            unique_services = [
-                'Interior design consultation',
-                'Custom eco-friendly furniture',
-                'Renovation with sustainable materials',
-                'Green spaces and indoor plants'
-            ]
     except Exception as e:
-        logger.error(f"Error in create_consultation GET: {str(e)}")
-        unique_services = [
-            'Interior design consultation',
-            'Custom eco-friendly furniture',
-            'Renovation with sustainable materials',
-            'Green spaces and indoor plants'
-        ]
-        messages.warning(request, "Some features may not be available. Please refresh the page.")
+        logger.error(f"Error running migrations: {str(e)}")
+    
+    # Always show all default services in dropdown
+    default_services = [
+        'Interior design consultation',
+        'Custom eco-friendly furniture',
+        'Renovation with sustainable materials',
+        'Green spaces and indoor plants'
+    ]
+    
+    # Get unique services from database and combine with defaults
+    unique_services = default_services.copy()  # Start with defaults
+    try:
+        db_services = list(Consultation.objects.values_list('service', flat=True).distinct().order_by('service'))
+        # Add any additional services from database that aren't in defaults
+        for service in db_services:
+            if service and service not in unique_services:
+                unique_services.append(service)
+    except Exception as e:
+        logger.error(f"Error getting unique services from database: {str(e)}")
+        # Use defaults if database query fails
+        unique_services = default_services
     
     return render(request, 'main/create_consultation.html', {
         'unique_services': unique_services

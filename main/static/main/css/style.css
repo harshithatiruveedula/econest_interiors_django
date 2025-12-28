@@ -22,7 +22,8 @@ a{color:inherit;text-decoration:none}
 .site-nav{display:flex;gap:20px;align-items:center}
 .nav-link{color:#e8f5e9;padding:8px 10px;border-radius:6px;transition:background-color .2s ease,color .2s ease,box-shadow .2s ease}
 .nav-link.active {
-    color: #ffffff !important;  /* pure bright white */
+    background: #ffffff !important;  /* light white background */
+    color: var(--green) !important;  /* green text on white background */
     opacity: 1 !important;
     font-weight: 600;
 }
