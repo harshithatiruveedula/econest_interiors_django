@@ -153,7 +153,8 @@ def dashboard(request):
         filter_date_from = request.GET.get('date_from', '').strip()
         filter_date_to = request.GET.get('date_to', '').strip()
 
-        # Start with all bookings
+        # Start with all bookings - convert to list immediately to avoid template evaluation errors
+        all_bookings_list = []
         try:
             all_bookings = Consultation.objects.all()
             
@@ -178,12 +179,14 @@ def dashboard(request):
             
             # Order by submitted date (newest first)
             all_bookings = all_bookings.order_by('-submitted_at')
+            # Convert to list immediately to avoid template evaluation issues
+            all_bookings_list = list(all_bookings)
             
         except Exception as e:
             logger.error(f"Error fetching consultations: {str(e)}")
-            all_bookings = []
+            all_bookings_list = []
             if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
-                messages.warning(request, "Consultations table not found. Run migrations to fix this.")
+                messages.warning(request, "Consultations table not found. Please run migrations: /setup/?key=setup123")
 
         # Get unique services for filter dropdown
         try:
@@ -196,8 +199,8 @@ def dashboard(request):
             "total_services": total_services,
             "total_images": total_images,
             "total_posts": total_posts,
-            "recent_bookings": all_bookings,
-            "all_bookings": all_bookings,
+            "recent_bookings": all_bookings_list,
+            "all_bookings": all_bookings_list,
             "search_query": search_query,
             "filter_service": filter_service,
             "filter_date_from": filter_date_from,

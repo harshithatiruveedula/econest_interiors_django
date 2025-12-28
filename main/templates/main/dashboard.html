@@ -48,7 +48,7 @@
   <div class="container">
     <!-- Header with Create Button -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:20px;">
-      <h2 style="margin:0;">All Consultations ({{ all_bookings|length }})</h2>
+      <h2 style="margin:0;">All Consultations{% if all_bookings %}({{ all_bookings|length }}){% endif %}</h2>
       <a href="{% url 'create_consultation' %}" class="button primary" style="font-size:16px;padding:12px 24px;">+ Create New Consultation</a>
     </div>
 
