@@ -114,7 +114,6 @@ def dashboard_access(request):
     """Dashboard access page - shows login status and provides access"""
     return render(request, 'main/dashboard_access.html')
 
-@staff_member_required
 def dashboard(request):
     try:
         # Auto-run migrations if tables don't exist
@@ -263,7 +262,6 @@ def dashboard(request):
             return HttpResponseServerError(error_msg)
 
 
-@staff_member_required
 def create_consultation(request):
     """Create a new consultation"""
     if request.method == "POST":
@@ -343,7 +341,6 @@ def create_consultation(request):
         'unique_services': unique_services
     })
 
-@staff_member_required
 def edit_consultation(request, id):
     """Edit a consultation"""
     try:
@@ -389,7 +386,6 @@ def edit_consultation(request, id):
     })
 
 
-@staff_member_required
 def delete_consultation(request, id):
     """Delete a consultation"""
     if request.method == "POST":

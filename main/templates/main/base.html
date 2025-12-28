@@ -40,11 +40,9 @@
 <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
    href="{% url 'contact' %}">Book Consultation</a>
 
-        <!-- ADMIN DASHBOARD LINK -->
-        {% if user.is_staff %}
+        <!-- DASHBOARD LINK (Public) -->
 <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
    href="{% url 'dashboard' %}">Dashboard</a>
-{% endif %}
       </nav>
     </div>
   </header>
@@ -63,9 +61,7 @@
       <div><h5><a href="{% url 'home' %}">Home</a></h5></div>
       <div><h5><a href="{% url 'services' %}">Services</a></h5></div>
       <div><h5><a href="{% url 'about' %}">About</a></h5></div>
-      {% if user.is_staff %}
-      <div><h5><a href="{% url 'dashboard' %}">Admin Dashboard</a></h5></div>
-      {% endif %}
+      <div><h5><a href="{% url 'dashboard' %}">Dashboard</a></h5></div>
 
       <div>
         <h5>Contact</h5>
