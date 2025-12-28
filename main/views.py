@@ -10,6 +10,52 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def ensure_migrations_run():
+    """Helper function to ensure database tables exist by running migrations if needed"""
+    try:
+        # Test if tables exist
+        Consultation.objects.exists()
+        return True
+    except Exception as e:
+        error_str = str(e).lower()
+        if "no such table" in error_str or "does not exist" in error_str or "relation" in error_str:
+            logger.info("Tables not found. Running migrations automatically...")
+            try:
+                from django.core.management import call_command
+                from django.db import connection, transaction
+                
+                # Close any existing connections
+                connection.close()
+                
+                # Run migrations
+                call_command('migrate', verbosity=0, interactive=False)
+                
+                # Commit transaction
+                transaction.commit()
+                
+                # Close connection to force reconnection
+                connection.close()
+                
+                logger.info("Migrations completed successfully.")
+                
+                # Verify tables exist now
+                try:
+                    Consultation.objects.exists()
+                    return True
+                except:
+                    logger.error("Tables still don't exist after migration")
+                    return False
+                    
+            except Exception as migrate_error:
+                logger.error(f"Auto-migration failed: {str(migrate_error)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                return False
+        else:
+            # Different error, not a missing table
+            logger.error(f"Database error (not missing table): {str(e)}")
+            return False
+
 def home(request):
     return render(request, 'main/index.html')
 
@@ -24,6 +70,20 @@ def contact(request):
     if request.method == "POST":
         # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        # Ensure migrations are run before creating consultation
+        if not ensure_migrations_run():
+            error_msg = "Database tables are not set up. Please contact administrator."
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": error_msg
+                }, status=500)
+            else:
+                messages.error(request, error_msg)
+                return render(request, 'main/contact.html', {
+                    'success': None
+                })
         
         try:
             # Get form data
@@ -105,43 +165,15 @@ def blog_detail(request, id):
 def dashboard(request):
     try:
         # Auto-run migrations if tables don't exist
-        try:
-            # Test if tables exist by trying a simple query
-            Consultation.objects.exists()
-        except Exception as e:
-            error_str = str(e).lower()
-            if "no such table" in error_str or "does not exist" in error_str or "relation" in error_str:
-                logger.info("Tables not found. Running migrations automatically...")
-                try:
-                    from django.core.management import call_command
-                    from django.db import connection, transaction
-                    
-                    # Close any existing connections
-                    connection.close()
-                    
-                    # Run migrations
-                    call_command('migrate', verbosity=0, interactive=False)
-                    
-                    # Commit transaction
-                    transaction.commit()
-                    
-                    # Close connection to force reconnection
-                    connection.close()
-                    
-                    logger.info("Migrations completed successfully.")
-                    messages.success(request, "Database tables created automatically! Please refresh the page.")
-                    
-                    # Try to query again after migration
-                    try:
-                        Consultation.objects.exists()
-                    except:
-                        pass  # Will show empty data
-                        
-                except Exception as migrate_error:
-                    logger.error(f"Auto-migration failed: {str(migrate_error)}")
-                    import traceback
-                    logger.error(traceback.format_exc())
-                    messages.warning(request, "Could not auto-create tables. Please run migrations manually.")
+        migration_success = ensure_migrations_run()
+        if not migration_success:
+            messages.warning(request, "Database tables are not set up. Attempting to create them...")
+            # Try one more time
+            migration_success = ensure_migrations_run()
+            if migration_success:
+                messages.success(request, "Database tables created automatically! Please refresh the page.")
+            else:
+                messages.error(request, "Could not create database tables. Please contact administrator.")
         
         # Safely get counts with error handling
         try:
@@ -260,6 +292,30 @@ def create_consultation(request):
     if request.method == "POST":
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
+        # Ensure migrations are run before creating consultation
+        if not ensure_migrations_run():
+            error_msg = "Database tables are not set up. Please contact administrator."
+            if is_ajax:
+                return JsonResponse({
+                    "success": False,
+                    "message": error_msg
+                }, status=500)
+            else:
+                messages.error(request, error_msg)
+                # Get unique services for dropdown even on error
+                try:
+                    unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
+                except:
+                    unique_services = [
+                        'Interior design consultation',
+                        'Custom eco-friendly furniture',
+                        'Renovation with sustainable materials',
+                        'Green spaces and indoor plants'
+                    ]
+                return render(request, 'main/create_consultation.html', {
+                    'unique_services': unique_services
+                })
+        
         try:
             name = request.POST.get('name', '').strip()
             email = request.POST.get('email', '').strip()
@@ -310,6 +366,9 @@ def create_consultation(request):
                 }, status=500)
             else:
                 messages.error(request, f'Error: {str(e)}')
+    
+    # Ensure migrations are run before getting unique services
+    ensure_migrations_run()
     
     # Get unique services for dropdown
     try:
