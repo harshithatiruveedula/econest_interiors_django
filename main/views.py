@@ -117,6 +117,7 @@ def dashboard_access(request):
 def dashboard(request):
     try:
         # Auto-run migrations if tables don't exist - MUST run before any queries
+        migration_just_ran = False
         try:
             # Test if tables exist by trying a simple query
             Consultation.objects.exists()
@@ -140,11 +141,10 @@ def dashboard(request):
                     # Close connection to force reconnection
                     connection.close()
                     
-                    logger.info("Migrations completed successfully. Redirecting...")
-                    
-                    # Redirect to reload page with new tables
+                    logger.info("Migrations completed successfully. Continuing with dashboard...")
+                    migration_just_ran = True
                     messages.success(request, "Database tables created automatically!")
-                    return redirect('dashboard')
+                    # Don't redirect - continue to render dashboard to avoid redirect loop
                 except Exception as migrate_error:
                     logger.error(f"Auto-migration failed: {str(migrate_error)}")
                     import traceback
@@ -249,13 +249,29 @@ def dashboard(request):
         # Check if it's a migration issue and try to auto-fix
         if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
             try:
-                logger.info("Attempting to auto-run migrations...")
+                logger.info("Attempting to auto-run migrations in exception handler...")
                 from django.core.management import call_command
+                from django.db import connection
+                connection.close()
                 call_command('migrate', verbosity=0, interactive=False)
-                logger.info("Migrations completed. Redirecting to dashboard...")
-                messages.success(request, "Database tables created automatically! Please refresh the page.")
-                # Redirect to dashboard to reload with new tables
-                return redirect('dashboard')
+                connection.close()
+                logger.info("Migrations completed. Rendering dashboard with empty data...")
+                messages.success(request, "Database tables created automatically!")
+                # Don't redirect - render dashboard with empty data to avoid redirect loop
+                context = {
+                    "total_bookings": 0,
+                    "total_services": 0,
+                    "total_images": 0,
+                    "total_posts": 0,
+                    "recent_bookings": [],
+                    "all_bookings": [],
+                    "search_query": "",
+                    "filter_service": "",
+                    "filter_date_from": "",
+                    "filter_date_to": "",
+                    "unique_services": [],
+                }
+                return render(request, 'main/dashboard.html', context)
             except Exception as migrate_error:
                 logger.error(f"Auto-migration failed: {str(migrate_error)}")
                 # If auto-migration fails, show error page
