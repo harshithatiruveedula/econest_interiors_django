@@ -191,6 +191,16 @@
     
     // Initialize chat widget
     function initChatWidget() {
+        // Don't load chat widget on dashboard page
+        if (window.location.pathname.includes('/dashboard/')) {
+            return;
+        }
+        
+        // Check if widget already exists
+        if (document.getElementById('ai-chat-widget')) {
+            return;
+        }
+        
         createChatWidget();
         
         // Event listeners

@@ -214,12 +214,34 @@
                 console.log('Result:', result);
                 
                 if (result.success) {
-                    // Show success popup
-                    alert(result.message);
+                    // Show success message in a better way
+                    const successDiv = document.createElement('div');
+                    successDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#28a745;color:#fff;padding:20px 30px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.2);z-index:10000;font-size:16px;font-weight:600;max-width:400px;';
+                    successDiv.textContent = result.message || 'Your consultation has been booked successfully!';
+                    document.body.appendChild(successDiv);
+                    
                     // Reset form
                     cleanForm.reset();
+                    
+                    // Remove success message after 5 seconds
+                    setTimeout(() => {
+                        successDiv.style.transition = 'opacity 0.5s';
+                        successDiv.style.opacity = '0';
+                        setTimeout(() => successDiv.remove(), 500);
+                    }, 5000);
                 } else {
-                    alert('Error: ' + (result.message || 'Unknown error occurred'));
+                    // Show error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#dc3545;color:#fff;padding:20px 30px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.2);z-index:10000;font-size:16px;font-weight:600;max-width:400px;';
+                    errorDiv.textContent = 'Error: ' + (result.message || 'Unknown error occurred');
+                    document.body.appendChild(errorDiv);
+                    
+                    // Remove error message after 5 seconds
+                    setTimeout(() => {
+                        errorDiv.style.transition = 'opacity 0.5s';
+                        errorDiv.style.opacity = '0';
+                        setTimeout(() => errorDiv.remove(), 500);
+                    }, 5000);
                 }
             } catch (error) {
                 console.error('Submission error:', error);

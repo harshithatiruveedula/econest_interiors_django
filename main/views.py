@@ -106,21 +106,41 @@ def dashboard(request):
     try:
         # Auto-run migrations if tables don't exist
         try:
+            # Test if tables exist by trying a simple query
             Consultation.objects.exists()
         except Exception as e:
             error_str = str(e).lower()
-            if "no such table" in error_str or "does not exist" in error_str:
+            if "no such table" in error_str or "does not exist" in error_str or "relation" in error_str:
                 logger.info("Tables not found. Running migrations automatically...")
                 try:
                     from django.core.management import call_command
-                    from django.db import connection
+                    from django.db import connection, transaction
+                    
+                    # Close any existing connections
                     connection.close()
+                    
+                    # Run migrations
                     call_command('migrate', verbosity=0, interactive=False)
+                    
+                    # Commit transaction
+                    transaction.commit()
+                    
+                    # Close connection to force reconnection
                     connection.close()
+                    
                     logger.info("Migrations completed successfully.")
-                    messages.success(request, "Database tables created automatically!")
+                    messages.success(request, "Database tables created automatically! Please refresh the page.")
+                    
+                    # Try to query again after migration
+                    try:
+                        Consultation.objects.exists()
+                    except:
+                        pass  # Will show empty data
+                        
                 except Exception as migrate_error:
                     logger.error(f"Auto-migration failed: {str(migrate_error)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
                     messages.warning(request, "Could not auto-create tables. Please run migrations manually.")
         
         # Safely get counts with error handling
