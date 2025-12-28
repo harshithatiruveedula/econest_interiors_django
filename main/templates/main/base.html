@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{% static 'main/css/style.css' %}">
-  <link rel="stylesheet" href="{% static 'main/css/chat.css' %}">
+  <link rel="stylesheet" href="{% static 'css/chat.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
 
@@ -40,9 +40,10 @@
 <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
    href="{% url 'contact' %}">Book Consultation</a>
 
-        <!-- DASHBOARD LINK (Public) -->
-<a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-   href="{% url 'dashboard' %}">Dashboard</a>
+        <!-- ADMIN DASHBOARD LINK -->
+        {% if user.is_authenticated %}
+  <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+{% endif %}
       </nav>
     </div>
   </header>
@@ -61,7 +62,6 @@
       <div><h5><a href="{% url 'home' %}">Home</a></h5></div>
       <div><h5><a href="{% url 'services' %}">Services</a></h5></div>
       <div><h5><a href="{% url 'about' %}">About</a></h5></div>
-      <div><h5><a href="{% url 'dashboard' %}">Dashboard</a></h5></div>
 
       <div>
         <h5>Contact</h5>

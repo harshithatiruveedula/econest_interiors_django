@@ -5,72 +5,57 @@
 
 {% block content %}
 
-<section class="page-hero">
-  <div class="container grid hero-grid">
-    <div>
-      <h1>Create New Consultation</h1>
-      <p>Add a new consultation booking</p>
-    </div>
-    <div class="hero-media">
-      <img src="{% static 'main/images/img35.jpg' %}" alt="Create consultation" />
-    </div>
-  </div>
-</section>
-
 <section class="section">
   <div class="container">
     <div style="max-width:800px;margin:0 auto;">
-      <h2 class="center">Consultation Details</h2>
+      <h2 class="center" style="margin-bottom:30px;">Create New Consultation</h2>
       
       {% if messages %}
       <div style="margin-bottom:20px;">
         {% for message in messages %}
-        <div style="padding:12px;margin-bottom:10px;border-radius:5px; 
-                    {% if message.tags == 'error' %}background:#fee;border:1px solid #fcc;color:#c33;
-                    {% elif message.tags == 'warning' %}background:#ffc;border:1px solid #fc9;color:#963;
-                    {% else %}background:#efe;border:1px solid #cfc;color:#363;{% endif %}">
+        <div style="padding:15px;margin-bottom:10px;border-radius:8px;background:{% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %};color:{% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};">
           {{ message }}
         </div>
         {% endfor %}
       </div>
       {% endif %}
 
-      <form method="post" id="createForm" class="grid form" style="background:#fff;padding:30px;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+      <form method="post" action="{% url 'create_consultation' %}" style="background:#fff;padding:30px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
         {% csrf_token %}
-        
+
         <div class="form-field">
           <label for="name">Name *</label>
-          <input type="text" id="name" name="name" required />
+          <input id="name" name="name" type="text" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
         <div class="form-field">
           <label for="email">Email *</label>
-          <input type="email" id="email" name="email" required />
+          <input id="email" name="email" type="email" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
         <div class="form-field">
           <label for="phone">Phone *</label>
-          <input type="tel" id="phone" name="phone" required />
+          <input id="phone" name="phone" type="tel" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
         <div class="form-field">
-          <label for="appointment_date">Preferred Date *</label>
-          <input type="date" id="appointment_date" name="appointment_date" required />
-        </div>
-
-        <div class="form-field full">
           <label for="service">Service *</label>
-          <select id="service" name="service" required>
-            <option value="">Select Service</option>
+          <select id="service" name="service" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;">
+            <option value="">Select a service</option>
             {% for service in unique_services %}
             <option value="{{ service }}">{{ service }}</option>
             {% endfor %}
           </select>
         </div>
 
-        <div class="form-actions full" style="display:flex;gap:15px;justify-content:center;margin-top:20px;">
-          <button type="submit" class="button primary">Create Consultation</button>
-          <a href="{% url 'dashboard' %}" class="button" style="background:#6c757d;color:#fff;text-decoration:none;">Cancel</a>
+        <div class="form-field">
+          <label for="appointment_date">Appointment Date *</label>
+          <input id="appointment_date" name="appointment_date" type="date" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
+        </div>
+
+        <div style="display:flex;gap:15px;margin-top:30px;">
+          <button type="submit" class="button primary" style="flex:1;padding:15px;font-size:16px;font-weight:600;">Create Consultation</button>
+          <a href="{% url 'dashboard' %}" class="button" style="flex:1;padding:15px;font-size:16px;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;">Cancel</a>
         </div>
       </form>
     </div>
@@ -78,81 +63,4 @@
 </section>
 
 {% endblock %}
-
-{% block extra_js %}
-<script>
-(function() {
-    'use strict';
-    
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    
-    const form = document.getElementById('createForm');
-    if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const csrftoken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            const formData = new FormData(form);
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalText = submitButton ? submitButton.textContent : 'Create Consultation';
-            
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Creating...';
-            }
-            
-            try {
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': csrftoken || ''
-                    },
-                    body: formData,
-                    credentials: 'same-origin'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok: ' + response.status);
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(result.message);
-                    window.location.href = '{% url "dashboard" %}';
-                } else {
-                    alert('Error: ' + (result.message || 'Unknown error occurred'));
-                }
-            } catch (error) {
-                console.error('Submission error:', error);
-                // Fallback to regular form submission
-                form.submit();
-            } finally {
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
-                }
-            }
-        });
-    }
-})();
-</script>
-{% endblock %}
-
-
-
 

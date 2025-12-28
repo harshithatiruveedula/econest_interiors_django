@@ -1,35 +1,47 @@
 {% extends 'main/base.html' %}
 {% load static %}
 
+{% block title %}Edit Consultation - EcoNest Interiors{% endblock %}
+
 {% block content %}
 
 <section class="section">
   <div class="container">
-    <h2 class="text-center" style="margin-bottom: 30px;">Edit Consultation</h2>
+    <div style="max-width:800px;margin:0 auto;">
+      <h2 class="center" style="margin-bottom:30px;">Edit Consultation</h2>
+      
+      {% if messages %}
+      <div style="margin-bottom:20px;">
+        {% for message in messages %}
+        <div style="padding:15px;margin-bottom:10px;border-radius:8px;background:{% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %};color:{% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
 
-    <div style="max-width:600px;margin:0 auto;background:#f7f7f7;padding:30px;border-radius:10px;">
-      <form method="post" id="editForm">
+      <form method="post" action="{% url 'edit_consultation' consultation.id %}" style="background:#fff;padding:30px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
         {% csrf_token %}
-        
-        <div style="margin-bottom:20px;">
-          <label for="name" style="display:block;margin-bottom:5px;font-weight:bold;">Name</label>
-          <input type="text" id="name" name="name" value="{{ consultation.name }}" required style="width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;">
+
+        <div class="form-field">
+          <label for="name">Name *</label>
+          <input id="name" name="name" type="text" value="{{ consultation.name }}" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
-        <div style="margin-bottom:20px;">
-          <label for="email" style="display:block;margin-bottom:5px;font-weight:bold;">Email</label>
-          <input type="email" id="email" name="email" value="{{ consultation.email }}" required style="width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;">
+        <div class="form-field">
+          <label for="email">Email *</label>
+          <input id="email" name="email" type="email" value="{{ consultation.email }}" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
-        <div style="margin-bottom:20px;">
-          <label for="phone" style="display:block;margin-bottom:5px;font-weight:bold;">Phone</label>
-          <input type="tel" id="phone" name="phone" value="{{ consultation.phone }}" required style="width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;">
+        <div class="form-field">
+          <label for="phone">Phone *</label>
+          <input id="phone" name="phone" type="tel" value="{{ consultation.phone }}" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
-        <div style="margin-bottom:20px;">
-          <label for="service" style="display:block;margin-bottom:5px;font-weight:bold;">Service</label>
-          <select id="service" name="service" required style="width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;">
-            <option value="">Select Service</option>
+        <div class="form-field">
+          <label for="service">Service *</label>
+          <select id="service" name="service" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;">
+            <option value="">Select a service</option>
             <option value="Interior design consultation" {% if consultation.service == "Interior design consultation" %}selected{% endif %}>Interior design consultation</option>
             <option value="Custom eco-friendly furniture" {% if consultation.service == "Custom eco-friendly furniture" %}selected{% endif %}>Custom eco-friendly furniture</option>
             <option value="Renovation with sustainable materials" {% if consultation.service == "Renovation with sustainable materials" %}selected{% endif %}>Renovation with sustainable materials</option>
@@ -37,98 +49,19 @@
           </select>
         </div>
 
-        <div style="margin-bottom:20px;">
-          <label for="appointment_date" style="display:block;margin-bottom:5px;font-weight:bold;">Preferred Date</label>
-          <input type="date" id="appointment_date" name="appointment_date" value="{{ consultation.appointment_date|date:'Y-m-d' }}" required style="width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;">
+        <div class="form-field">
+          <label for="appointment_date">Appointment Date *</label>
+          <input id="appointment_date" name="appointment_date" type="date" value="{{ consultation.appointment_date|date:'Y-m-d' }}" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:16px;" />
         </div>
 
-        <div style="text-align:center;margin-top:30px;">
-          <button type="submit" style="background:#0066cc;color:#fff;padding:12px 30px;border:none;border-radius:5px;cursor:pointer;font-size:16px;margin-right:10px;">Update Consultation</button>
-          <a href="{% url 'dashboard' %}" style="background:#999;color:#fff;padding:12px 30px;text-decoration:none;border-radius:5px;display:inline-block;">Cancel</a>
+        <div style="display:flex;gap:15px;margin-top:30px;">
+          <button type="submit" class="button primary" style="flex:1;padding:15px;font-size:16px;font-weight:600;">Update Consultation</button>
+          <a href="{% url 'dashboard' %}" class="button" style="flex:1;padding:15px;font-size:16px;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;">Cancel</a>
         </div>
       </form>
     </div>
-
   </div>
 </section>
 
 {% endblock %}
-
-{% block extra_js %}
-<script>
-(function() {
-    'use strict';
-    
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    
-    const form = document.getElementById('editForm');
-    if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const csrftoken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            const formData = new FormData(form);
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalText = submitButton ? submitButton.textContent : 'Update Consultation';
-            
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Updating...';
-            }
-            
-            try {
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': csrftoken || ''
-                    },
-                    body: formData,
-                    credentials: 'same-origin'
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error('Network response was not ok: ' + response.status);
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(result.message);
-                    window.location.href = '{% url "dashboard" %}';
-                } else {
-                    alert('Error: ' + (result.message || 'Unknown error occurred'));
-                }
-            } catch (error) {
-                console.error('Submission error:', error);
-                // Fallback to regular form submission
-                form.submit();
-            } finally {
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
-                }
-            }
-        });
-    }
-})();
-</script>
-{% endblock %}
-
-
-
 
