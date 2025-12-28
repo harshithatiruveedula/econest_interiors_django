@@ -154,15 +154,175 @@
 
 {% block extra_css %}
 <style>
+  /* Dashboard Mobile Responsive Styles */
   @media (max-width: 768px) {
-    .cards-3 {
+    /* Dashboard header */
+    .section[style*="background:linear-gradient"] {
+      padding: 40px 0 !important;
+    }
+    .section[style*="background:linear-gradient"] h1 {
+      font-size: 28px !important;
+    }
+    .section[style*="background:linear-gradient"] p {
+      font-size: 16px !important;
+    }
+    
+    /* Statistics cards */
+    .grid.cards-3[style*="grid-template-columns"] {
       grid-template-columns: 1fr !important;
+      gap: 20px !important;
     }
-    table {
-      font-size: 12px;
+    .card[style*="background:#fff"] {
+      padding: 20px !important;
     }
-    th, td {
-      padding: 8px !important;
+    .card[style*="background:#fff"] h3 {
+      font-size: 14px !important;
+      margin-bottom: 12px !important;
+    }
+    .card[style*="background:#fff"] p {
+      font-size: 36px !important;
+    }
+    
+    /* Consultations header */
+    .section.alt .container > div[style*="display:flex"] {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 16px !important;
+    }
+    .section.alt .container > div[style*="display:flex"] h2 {
+      font-size: 20px !important;
+      margin-bottom: 0 !important;
+    }
+    .section.alt .container > div[style*="display:flex"] .button {
+      width: 100% !important;
+      text-align: center !important;
+      padding: 14px 20px !important;
+    }
+    
+    /* Search and filter form */
+    form[style*="background:#fff"] {
+      padding: 20px !important;
+    }
+    form[style*="background:#fff"] > div[style*="display:grid"] {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    form[style*="background:#fff"] > div[style*="display:flex"] {
+      flex-direction: column !important;
+      gap: 12px !important;
+    }
+    form[style*="background:#fff"] button,
+    form[style*="background:#fff"] a.button {
+      width: 100% !important;
+      padding: 12px 18px !important;
+      font-size: 15px !important;
+    }
+    
+    /* Table container */
+    div[style*="overflow-x:auto"] {
+      border-radius: 8px !important;
+      padding: 12px !important;
+    }
+    
+    /* Table */
+    table[style*="width:100%"] {
+      min-width: 600px !important;
+      font-size: 12px !important;
+    }
+    table[style*="width:100%"] th {
+      padding: 10px 8px !important;
+      font-size: 11px !important;
+      white-space: nowrap;
+    }
+    table[style*="width:100%"] td {
+      padding: 10px 8px !important;
+      font-size: 12px !important;
+    }
+    
+    /* Action buttons */
+    td[style*="text-align:center"] > div[style*="display:flex"] {
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    td[style*="text-align:center"] .button {
+      width: 100% !important;
+      min-width: auto !important;
+      padding: 10px 14px !important;
+      font-size: 12px !important;
+    }
+    
+    /* Empty state */
+    td[colspan] {
+      padding: 40px 20px !important;
+    }
+    td[colspan] p {
+      font-size: 16px !important;
+    }
+    td[colspan] a.button {
+      width: auto !important;
+      display: inline-block !important;
+      margin-top: 16px !important;
+      padding: 12px 20px !important;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    /* Extra small devices */
+    .section[style*="background:linear-gradient"] {
+      padding: 32px 0 !important;
+    }
+    .section[style*="background:linear-gradient"] h1 {
+      font-size: 24px !important;
+    }
+    
+    .card[style*="background:#fff"] {
+      padding: 16px !important;
+    }
+    .card[style*="background:#fff"] p {
+      font-size: 32px !important;
+    }
+    
+    form[style*="background:#fff"] {
+      padding: 16px !important;
+    }
+    
+    table[style*="width:100%"] {
+      min-width: 500px !important;
+      font-size: 11px !important;
+    }
+    table[style*="width:100%"] th,
+    table[style*="width:100%"] td {
+      padding: 8px 6px !important;
+      font-size: 11px !important;
+    }
+    
+    /* Hide less important columns on very small screens */
+    table[style*="width:100%"] th:nth-child(6),
+    table[style*="width:100%"] td:nth-child(6) {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    /* Very small devices */
+    .section[style*="background:linear-gradient"] h1 {
+      font-size: 22px !important;
+    }
+    
+    .card[style*="background:#fff"] p {
+      font-size: 28px !important;
+    }
+    
+    table[style*="width:100%"] {
+      min-width: 400px !important;
+    }
+    
+    /* Hide more columns on tiny screens */
+    table[style*="width:100%"] th:nth-child(5),
+    table[style*="width:100%"] td:nth-child(5),
+    table[style*="width:100%"] th:nth-child(6),
+    table[style*="width:100%"] td:nth-child(6) {
+      display: none;
     }
   }
 </style>
