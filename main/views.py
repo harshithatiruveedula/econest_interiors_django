@@ -23,12 +23,23 @@ def ensure_migrations_run():
             try:
                 from django.core.management import call_command
                 from django.db import connection, transaction
+                import sys
+                from io import StringIO
                 
                 # Close any existing connections
                 connection.close()
                 
-                # Run migrations
-                call_command('migrate', verbosity=0, interactive=False)
+                # Capture migration output
+                old_stdout = sys.stdout
+                sys.stdout = StringIO()
+                
+                try:
+                    # Run migrations
+                    call_command('migrate', verbosity=1, interactive=False)
+                    output = sys.stdout.getvalue()
+                    logger.info(f"Migration output: {output}")
+                finally:
+                    sys.stdout = old_stdout
                 
                 # Commit transaction
                 transaction.commit()
@@ -38,12 +49,17 @@ def ensure_migrations_run():
                 
                 logger.info("Migrations completed successfully.")
                 
+                # Wait a moment for database to be ready
+                import time
+                time.sleep(0.5)
+                
                 # Verify tables exist now
                 try:
                     Consultation.objects.exists()
+                    logger.info("Tables verified after migration")
                     return True
-                except:
-                    logger.error("Tables still don't exist after migration")
+                except Exception as verify_error:
+                    logger.error(f"Tables still don't exist after migration: {str(verify_error)}")
                     return False
                     
             except Exception as migrate_error:
@@ -105,13 +121,28 @@ def contact(request):
             if not appointment_date:
                 raise ValidationError("Appointment date is required")
             
+            # Validate and parse date
+            from datetime import datetime
+            try:
+                # Try to parse the date
+                if isinstance(appointment_date, str):
+                    # Handle different date formats
+                    if len(appointment_date.split('-')) == 3:
+                        parsed_date = datetime.strptime(appointment_date, '%Y-%m-%d').date()
+                    else:
+                        raise ValidationError("Invalid date format. Please use YYYY-MM-DD format.")
+                else:
+                    parsed_date = appointment_date
+            except ValueError as ve:
+                raise ValidationError(f"Invalid date format: {str(ve)}. Please use YYYY-MM-DD format.")
+            
             # Create consultation
             consultation = Consultation.objects.create(
                 name=name,
                 email=email,
                 phone=phone,
                 service=service,
-                appointment_date=appointment_date,
+                appointment_date=parsed_date,
             )
             
             # Return JSON response for AJAX requests
@@ -136,14 +167,25 @@ def contact(request):
         except Exception as e:
             # Log the error for debugging
             logger.error(f"Error creating consultation: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
+            # Get a user-friendly error message
+            error_message = str(e)
+            if "no such table" in error_message.lower():
+                error_message = "Database tables are not set up. Please try again in a moment."
+            elif "date" in error_message.lower():
+                error_message = "Invalid date format. Please use YYYY-MM-DD format."
+            else:
+                error_message = f"Unable to book consultation: {error_message}"
             
             if is_ajax:
                 return JsonResponse({
                     "success": False,
-                    "message": f"An error occurred: {str(e)}"
+                    "message": error_message
                 }, status=500)
             else:
-                messages.error(request, 'An error occurred. Please try again.')
+                messages.error(request, error_message)
     
     return render(request, 'main/contact.html', {
         'success': request.GET.get('success')
@@ -334,12 +376,27 @@ def create_consultation(request):
             if not appointment_date:
                 raise ValidationError("Appointment date is required")
             
+            # Validate and parse date
+            from datetime import datetime
+            try:
+                # Try to parse the date
+                if isinstance(appointment_date, str):
+                    # Handle different date formats
+                    if len(appointment_date.split('-')) == 3:
+                        parsed_date = datetime.strptime(appointment_date, '%Y-%m-%d').date()
+                    else:
+                        raise ValidationError("Invalid date format. Please use YYYY-MM-DD format.")
+                else:
+                    parsed_date = appointment_date
+            except ValueError as ve:
+                raise ValidationError(f"Invalid date format: {str(ve)}. Please use YYYY-MM-DD format.")
+            
             consultation = Consultation.objects.create(
                 name=name,
                 email=email,
                 phone=phone,
                 service=service,
-                appointment_date=appointment_date,
+                appointment_date=parsed_date,
             )
             
             if is_ajax:
@@ -359,34 +416,59 @@ def create_consultation(request):
             else:
                 messages.error(request, str(e))
         except Exception as e:
+            # Log the error for debugging
+            logger.error(f"Error creating consultation in dashboard: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
+            # Get a user-friendly error message
+            error_message = str(e)
+            if "no such table" in error_message.lower():
+                error_message = "Database tables are not set up. Please try again in a moment."
+            elif "date" in error_message.lower():
+                error_message = "Invalid date format. Please use YYYY-MM-DD format."
+            else:
+                error_message = f"Error creating consultation: {error_message}"
+            
             if is_ajax:
                 return JsonResponse({
                     "success": False,
-                    "message": f"Error: {str(e)}"
+                    "message": error_message
                 }, status=500)
             else:
-                messages.error(request, f'Error: {str(e)}')
+                messages.error(request, error_message)
     
     # Ensure migrations are run before getting unique services
-    ensure_migrations_run()
-    
-    # Get unique services for dropdown
     try:
-        unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
-        if not unique_services:
+        ensure_migrations_run()
+        
+        # Get unique services for dropdown
+        try:
+            unique_services = Consultation.objects.values_list('service', flat=True).distinct().order_by('service')
+            if not unique_services:
+                unique_services = [
+                    'Interior design consultation',
+                    'Custom eco-friendly furniture',
+                    'Renovation with sustainable materials',
+                    'Green spaces and indoor plants'
+                ]
+        except Exception as e:
+            logger.error(f"Error getting unique services: {str(e)}")
             unique_services = [
                 'Interior design consultation',
                 'Custom eco-friendly furniture',
                 'Renovation with sustainable materials',
                 'Green spaces and indoor plants'
             ]
-    except:
+    except Exception as e:
+        logger.error(f"Error in create_consultation GET: {str(e)}")
         unique_services = [
             'Interior design consultation',
             'Custom eco-friendly furniture',
             'Renovation with sustainable materials',
             'Green spaces and indoor plants'
         ]
+        messages.warning(request, "Some features may not be available. Please refresh the page.")
     
     return render(request, 'main/create_consultation.html', {
         'unique_services': unique_services

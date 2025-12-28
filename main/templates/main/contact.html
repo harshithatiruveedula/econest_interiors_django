@@ -210,7 +210,17 @@
                     throw new Error('Network response was not ok: ' + response.status);
                 }
                 
-                const result = await response.json();
+                // Check if response is JSON
+                let result;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Server returned an invalid response. Please try again.');
+                }
+                
                 console.log('Result:', result);
                 
                 if (result.success) {
@@ -245,7 +255,19 @@
                 }
             } catch (error) {
                 console.error('Submission error:', error);
-                alert('Error: Unable to submit consultation. Please check the console for details and try again.');
+                
+                // Show user-friendly error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#dc3545;color:#fff;padding:20px 30px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.2);z-index:10000;font-size:16px;font-weight:600;max-width:400px;';
+                errorDiv.textContent = 'Error: ' + (error.message || 'Unable to submit consultation. Please try again.');
+                document.body.appendChild(errorDiv);
+                
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    errorDiv.style.transition = 'opacity 0.5s';
+                    errorDiv.style.opacity = '0';
+                    setTimeout(() => errorDiv.remove(), 500);
+                }, 5000);
             } finally {
                 // Re-enable button
                 if (submitButton) {
