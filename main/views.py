@@ -117,15 +117,28 @@ def dashboard_access(request):
 @staff_member_required
 def dashboard(request):
     try:
+        # Auto-run migrations if tables don't exist
+        try:
+            # Test if tables exist by trying a simple query
+            Consultation.objects.exists()
+        except Exception as e:
+            if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
+                logger.info("Tables not found. Running migrations automatically...")
+                try:
+                    from django.core.management import call_command
+                    call_command('migrate', verbosity=0, interactive=False)
+                    logger.info("Migrations completed successfully")
+                    messages.success(request, "Database tables created automatically!")
+                except Exception as migrate_error:
+                    logger.error(f"Auto-migration failed: {str(migrate_error)}")
+                    messages.warning(request, "Could not auto-create tables. Please contact administrator.")
+        
         # Safely get counts with error handling
         try:
             total_bookings = Consultation.objects.count()
         except Exception as e:
             logger.error(f"Error counting consultations: {str(e)}")
             total_bookings = 0
-            # Check if it's a migration issue
-            if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
-                messages.error(request, "Database tables not found. Please run migrations: /setup/?key=setup123")
         
         try:
             total_services = Service.objects.count()
@@ -185,8 +198,7 @@ def dashboard(request):
         except Exception as e:
             logger.error(f"Error fetching consultations: {str(e)}")
             all_bookings_list = []
-            if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
-                messages.warning(request, "Consultations table not found. Please run migrations: /setup/?key=setup123")
+            # Don't show error message - just show empty table gracefully
 
         # Get unique services for filter dropdown
         try:
@@ -215,17 +227,31 @@ def dashboard(request):
         error_trace = traceback.format_exc()
         logger.error(error_trace)
         
-        # Check if it's a migration issue
+        # Check if it's a migration issue and try to auto-fix
         if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
-            error_msg = (
-                "<h1>Database Setup Required</h1>"
-                "<p>The database tables haven't been created yet.</p>"
-                "<p><strong>Solution:</strong> Run migrations to create the tables.</p>"
-                "<p><a href='/setup/?key=setup123' style='background:#0066cc;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Run Setup (Migrations)</a></p>"
-                "<p><a href='/create-admin/' style='background:#28a745;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Create Admin</a></p>"
-                "<p><a href='/admin/' style='background:#6c757d;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Admin Panel</a></p>"
-            )
+            try:
+                logger.info("Attempting to auto-run migrations...")
+                from django.core.management import call_command
+                call_command('migrate', verbosity=0, interactive=False)
+                logger.info("Migrations completed. Redirecting to dashboard...")
+                messages.success(request, "Database tables created automatically! Please refresh the page.")
+                # Redirect to dashboard to reload with new tables
+                return redirect('dashboard')
+            except Exception as migrate_error:
+                logger.error(f"Auto-migration failed: {str(migrate_error)}")
+                # If auto-migration fails, show error page
+                error_msg = (
+                    "<h1>Database Setup Required</h1>"
+                    "<p>The database tables haven't been created yet.</p>"
+                    "<p><strong>Solution:</strong> Run migrations to create the tables.</p>"
+                    "<p><a href='/setup/?key=setup123' style='background:#0066cc;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Run Setup (Migrations)</a></p>"
+                    "<p><a href='/create-admin/' style='background:#28a745;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Create Admin</a></p>"
+                    "<p><a href='/admin/' style='background:#6c757d;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Admin Panel</a></p>"
+                )
+                from django.http import HttpResponseServerError
+                return HttpResponseServerError(error_msg)
         else:
+            # For other errors, show error page
             error_msg = (
                 f"<h1>Dashboard Error</h1>"
                 f"<p>An error occurred while loading the dashboard.</p>"
@@ -233,9 +259,8 @@ def dashboard(request):
                 f"<p><a href='/admin/' style='background:#0066cc;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Go to Admin Panel</a></p>"
                 f"<p><a href='/' style='background:#6c757d;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin:10px 5px;'>Go to Home</a></p>"
             )
-        
-        from django.http import HttpResponseServerError
-        return HttpResponseServerError(error_msg)
+            from django.http import HttpResponseServerError
+            return HttpResponseServerError(error_msg)
 
 
 @staff_member_required
